@@ -31,7 +31,10 @@ class SystemHealth extends Migration
             $table->integer('group_id');
             $table->integer('host_id');
             $table->timestamps();
+            $table->tinyInteger('alive');
             $table->boolean('firewall');
+            $table->string('storageMB');
+
         });
     }
 
@@ -42,6 +45,8 @@ class SystemHealth extends Migration
      */
     public function down()
     {
-        //
+        Schema::drop('syshealth');
+        Schema::drop('hosts');
+        Schema::drop('groups');
     }
 }
