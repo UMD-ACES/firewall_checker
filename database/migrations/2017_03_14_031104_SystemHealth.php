@@ -17,23 +17,16 @@ class SystemHealth extends Migration
         {
             $table->increments('id');
             $table->string('name');
-        });
-
-        Schema::create('hosts', function (Blueprint $table)
-        {
-            $table->increments('id');
-            $table->integer('group_id');
             $table->ipAddress('ip');
         });
 
         Schema::create('syshealth', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('group_id');
-            $table->integer('host_id');
-            $table->timestamps();
-            $table->tinyInteger('alive');
+            $table->timestamp('inserted_on');
+            $table->boolean('alive');
             $table->boolean('firewall');
-            $table->string('storageMB');
+            $table->string('storageKB');
 
         });
     }
@@ -46,7 +39,6 @@ class SystemHealth extends Migration
     public function down()
     {
         Schema::drop('syshealth');
-        Schema::drop('hosts');
         Schema::drop('groups');
     }
 }
