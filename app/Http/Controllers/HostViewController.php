@@ -18,7 +18,6 @@ class HostViewController extends Controller
             ->select(['inserted_on', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'])
             ->where('alive', '=', 1)
             ->where('group_id', '=', $groupId)
-            ->limit(10)
             ->get();
 
         $data = array(array('date', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'));
