@@ -19,7 +19,7 @@ class HostViewController extends Controller
             ->where('group_id', '=', $groupId)
             ->get();
 
-        $data = array(array('date', 'alive', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'));
+        $data = array(array('date', 'alive (0 or 1)', 'firewall (0 or 1)', 'Honeypot transfer In (MB)', 'Honeypot transfer Out (MB)', 'Available storage in MB', 'Unused memory in MB', 'CPU load - AVG 5 min'));
         $i = 1;
 
         foreach ($groupHost as $host)
