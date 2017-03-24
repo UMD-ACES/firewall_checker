@@ -15,17 +15,17 @@ class HostViewController extends Controller
     public function view($groupId)
     {
         $groupHost = \DB::table('syshealth')
-            ->select(['inserted_on', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'])
-            ->where('alive', '=', 1)
+            ->select(['inserted_on', 'alive', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'])
             ->where('group_id', '=', $groupId)
             ->get();
 
-        $data = array(array('date', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'));
+        $data = array(array('date', 'alive', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'));
         $i = 1;
 
         foreach ($groupHost as $host)
         {
             $data[$i][] = $host->inserted_on;
+            $data[$i][] = $host->alive;
             $data[$i][] = $host->firewall;
             $data[$i][] = $host->transferInMB;
             $data[$i][] = $host->transferOutMB;
