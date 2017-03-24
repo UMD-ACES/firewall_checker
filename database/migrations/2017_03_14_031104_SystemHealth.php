@@ -25,8 +25,14 @@ class SystemHealth extends Migration
             $table->integer('group_id');
             $table->timestamp('inserted_on');
             $table->boolean('alive');
+            $table->text('alive_error');
             $table->boolean('firewall');
-            $table->string('storageKB');
+            $table->unsignedBigInteger('transferInMB');
+            $table->unsignedBigInteger('transferOutMB');
+            $table->unsignedBigInteger('storageMB');
+            $table->unsignedBigInteger('memoryMB');
+            $table->float('cpuLoad');
+            $table->text('upTime');
 
         });
     }

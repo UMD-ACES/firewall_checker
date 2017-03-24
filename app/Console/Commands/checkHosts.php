@@ -38,6 +38,7 @@ class checkHosts extends Command
      */
     public function handle()
     {
+
         $hosts = \DB::table('groups')
             ->select(['id', 'groups.name', 'groups.ip'])
             ->get();
@@ -46,7 +47,13 @@ class checkHosts extends Command
 
         $hosts = $this->firewallChecker($hosts);
 
+        $hosts = $this->trafficTransfer($hosts);
+
         $hosts = $this->storageAvailable($hosts);
+
+        $hosts = $this->memoryAvailable($hosts);
+
+        $hosts = $this->upTime($hosts);
 
         $hosts->map(function($host, $key)
         {
@@ -54,10 +61,18 @@ class checkHosts extends Command
                 ->insert([
                     'group_id'      => $host->id,
                     'alive'         => $host->alive,
+                    'alive_error'   => $host->alive_error,
                     'firewall'      => $host->firewall,
-                    'storageKB'     => $host->storage,
+                    'transferInMB'  => $host->transferIn,
+                    'transferOutMB' => $host->transferOut,
+                    'storageMB'     => $host->storage,
+                    'memoryMB'      => $host->memory,
+                    'cpuLoad'       => $host->cpu,
+                    'upTime'        => $host->upTime,
                     'inserted_on'   => date("Y-m-d H:i:s")]);
         });
+
+        return 0;
     }
 
     /**
@@ -66,20 +81,26 @@ class checkHosts extends Command
      * @param Collection $hosts
      * @return Collection $hosts
      */
-    private function checkAlive($hosts)
+    private function checkAlive(Collection $hosts)
     {
         $hosts->map(function($item, $key) {
-            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "date"', $output, $return);
+
+            exec('timeout 20s ssh -i /var/www/id_rsa root@'.$item->ip.' "date"', $output, $return);
 
             $alive = true;
 
             if($return != 0)
             {
+                $item->alive_error = implode(PHP_EOL, $output);
                 //mail(getenv('MAIL_TO'), 'HACS102',
                 //    'No response from '.$item->name.'
                 //    Output: '.implode('', $output).'
                 //    Return code: '.$return);
                 $alive = false;
+            }
+            else
+            {
+                $item->alive_error = '';
             }
 
             $item->alive = $alive;
@@ -148,6 +169,40 @@ class checkHosts extends Command
         return $hosts;
     }
 
+    /**
+     * @param Collection $hosts
+     * @return Collection $hosts
+     */
+    private function trafficTransfer(Collection $hosts)
+    {
+
+        $hosts->map(function($item, $key) {
+
+            if(!$item->alive)
+            {
+                $item->transferIn = 0;
+                $item->transferOut = 0;
+                return $item;
+            }
+
+            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "ifconfig eth1 | grep \'RX bytes\'"', $output, $return);
+
+            $line = preg_replace('!\s+!', ' ', $output[0]);
+            $linePieces = explode(' ', $line);
+            $transferIn = str_replace('bytes:', '', $linePieces[2]);
+            $transferIn = floor($transferIn / (1024 * 1024));
+            $transferOut = str_replace('bytes:', '', $linePieces[6]);
+            $transferOut = floor($transferOut / (1024 * 1024));
+
+            $item->transferIn = $transferIn;
+            $item->transferOut = $transferOut;
+
+            return $item;
+        });
+
+        return $hosts;
+    }
+
 
     private function storageAvailable(Collection $hosts)
     {
@@ -159,7 +214,7 @@ class checkHosts extends Command
                 return $item;
             }
 
-            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "df -P"', $output, $return);
+            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "df -P -m"', $output, $return);
 
             $storage = 0;
 
@@ -173,7 +228,7 @@ class checkHosts extends Command
                 }
             }
 
-            if(($storage < 1024*1024)) // less than 1GB
+            if(($storage < 1024)) // less than 1G
             {
                 //mail(getenv('MAIL_TO'), 'HACS102',
                 //    'Low Disk Usage from '.$item->name.'
@@ -182,6 +237,73 @@ class checkHosts extends Command
             }
 
             $item->storage = $storage;
+
+            return $item;
+        });
+
+        return $hosts;
+    }
+
+    /**
+     * @param Collection $hosts
+     * @return Collection $hosts
+     */
+    private function memoryAvailable(Collection $hosts)
+    {
+        $hosts->map(function($item, $key) {
+
+            if(!$item->alive)
+            {
+                $item->memory = 0;
+                return $item;
+            }
+
+            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "free -m"', $output, $return);
+
+            $memory = 0;
+
+            for($i = 0; $i < count($output); $i++)
+            {
+                if(strpos($output[$i], 'Mem:') !== FALSE)
+                {
+                    $line = preg_replace('!\s+!', ' ', $output[$i]);
+                    $linePieces = explode(' ', $line);
+                    $memory = $linePieces[3];
+                }
+            }
+
+            $item->memory = $memory;
+
+            return $item;
+        });
+
+        return $hosts;
+    }
+
+    /**
+     * @param Collection $hosts
+     * @return Collection $hosts
+     */
+    private function upTime(Collection $hosts)
+    {
+        $hosts->map(function($item, $key) {
+
+            if(!$item->alive)
+            {
+                $item->cpu = 0;
+                $item->upTime = 'Down/No route';
+                return $item;
+            }
+
+            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "uptime | grep -ohe \'load average[s:][: ].*\'"', $load, $return);
+            exec('ssh -i /var/www/id_rsa root@'.$item->ip.' "uptime -p"', $upTime, $return);
+
+            $line = preg_replace('!\s+!', ' ', $load[0]);
+            $linePieces = explode(' ', $line);
+            $cpu = str_replace(',', '', $linePieces[3]);
+
+            $item->cpu = $cpu;
+            $item->upTime = $upTime[0];
 
             return $item;
         });
