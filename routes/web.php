@@ -11,6 +11,5 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', 'HostViewController@index');
+Route::get('/hosts/{group_id}', 'HostViewController@view');
