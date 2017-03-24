@@ -85,7 +85,7 @@ class checkHosts extends Command
     {
         $hosts->map(function($item, $key) {
 
-            exec('timeout 20s ssh -i /var/www/id_rsa root@'.$item->ip.' "date"', $output, $return);
+            exec('timeout 30s ssh -i /var/www/id_rsa root@'.$item->ip.' "date"', $output, $return);
 
             $alive = true;
 
@@ -268,7 +268,7 @@ class checkHosts extends Command
                 {
                     $line = preg_replace('!\s+!', ' ', $output[$i]);
                     $linePieces = explode(' ', $line);
-                    $memory = $linePieces[3];
+                    $memory = $linePieces[6];
                 }
             }
 
