@@ -60,9 +60,38 @@
                 shape-rendering: crispEdges;
             }
 
+            .group_number {
+                text-decoration: none;
+                font-size:15px;
+            }
+
+            .group_li {
+                margin-top:12px;
+            }
+
         </style>
     </head>
     <body>
+    <nav style="float:left;">
+        <ul style="list-style-type: none">
+            <li class="group_li"><a href="/?group_id=1" class="group_number">Group 1</a></li>
+            <li class="group_li"><a href="/?group_id=2" class="group_number">Group 2</a></li>
+            <li class="group_li"><a href="/?group_id=3" class="group_number">Group 3</a></li>
+            <li class="group_li"><a href="/?group_id=4" class="group_number">Group 4</a></li>
+            <li class="group_li"><a href="/?group_id=5" class="group_number">Group 5</a></li>
+            <li class="group_li"><a href="/?group_id=6" class="group_number">Group 6</a></li>
+            <li class="group_li"><a href="/?group_id=7" class="group_number">Group 7</a></li>
+            <li class="group_li"><a href="/?group_id=8" class="group_number">Group 8</a></li>
+            <li class="group_li"><a href="/?group_id=9" class="group_number">Group 9</a></li>
+            <li class="group_li"><a href="/?group_id=10" class="group_number">Group 10</a></li>
+            <li class="group_li"><a href="/?group_id=11" class="group_number">Group 11</a></li>
+            <li class="group_li"><a href="/?group_id=12" class="group_number">Group 12</a></li>
+            <li class="group_li"><a href="/?group_id=13" class="group_number">Group 13</a></li>
+            <li class="group_li"><a href="/?group_id=14" class="group_number">Group 14</a></li>
+            <li class="group_li"><a href="/?group_id=15" class="group_number">Group 15</a></li>
+
+        </ul>
+    </nav>
     <script src="http://d3js.org/d3.v3.js"></script>
     <script>
         //Code adapted from http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
@@ -80,7 +109,7 @@
         //Code adapted from http://bl.ocks.org/DStruths/9c042e3a6b66048b5bd4
         var margin = {top: 20, right: 200, bottom: 100, left: 50},
             margin2 = { top: 430, right: 10, bottom: 20, left: 40 },
-            width = 960 - margin.left - margin.right,
+            width = 1400 - margin.left - margin.right,
             height = 500 - margin.top - margin.bottom,
             height2 = 500 - margin2.top - margin2.bottom;
 
@@ -177,8 +206,8 @@
 
             xScale.domain(d3.extent(data, function(d) { return d.date; })); // extent = highest and lowest points, domain is data, range is bouding box
 
-            yScale.domain([0, 100
-                //d3.max(categories, function(c) { return d3.max(c.values, function(v) { return v.rating; }); })
+            yScale.domain([0,
+                d3.max(categories, function(c) { return d3.max(c.values, function(v) { return v.rating; }); })
             ]);
 
             xScale2.domain(xScale.domain()); // Setting a duplicate xdomain for brushing reference later
@@ -230,7 +259,7 @@
                 .attr("x", -10)
                 .attr("dy", ".71em")
                 .style("text-anchor", "end")
-                .text("Issues Rating");
+                .text("Host Details");
 
             var issue = svg.selectAll(".issue")
                 .data(categories) // Select nested data and append to new svg group elements
