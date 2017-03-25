@@ -74,21 +74,21 @@
     <body>
     <nav style="float:left;">
         <ul style="list-style-type: none">
-            <li class="group_li"><a href="/?group_id=1" class="group_number">Group 1</a></li>
-            <li class="group_li"><a href="/?group_id=2" class="group_number">Group 2</a></li>
-            <li class="group_li"><a href="/?group_id=3" class="group_number">Group 3</a></li>
-            <li class="group_li"><a href="/?group_id=4" class="group_number">Group 4</a></li>
-            <li class="group_li"><a href="/?group_id=5" class="group_number">Group 5</a></li>
-            <li class="group_li"><a href="/?group_id=6" class="group_number">Group 6</a></li>
-            <li class="group_li"><a href="/?group_id=7" class="group_number">Group 7</a></li>
-            <li class="group_li"><a href="/?group_id=8" class="group_number">Group 8</a></li>
-            <li class="group_li"><a href="/?group_id=9" class="group_number">Group 9</a></li>
-            <li class="group_li"><a href="/?group_id=10" class="group_number">Group 10</a></li>
-            <li class="group_li"><a href="/?group_id=11" class="group_number">Group 11</a></li>
-            <li class="group_li"><a href="/?group_id=12" class="group_number">Group 12</a></li>
-            <li class="group_li"><a href="/?group_id=13" class="group_number">Group 13</a></li>
-            <li class="group_li"><a href="/?group_id=14" class="group_number">Group 14</a></li>
-            <li class="group_li"><a href="/?group_id=15" class="group_number">Group 15</a></li>
+            <li class="group_li"><a href="/?group_id=1" class="group_number">1 : Group 1A</a></li>
+            <li class="group_li"><a href="/?group_id=2" class="group_number">2 : Group 1B</a></li>
+            <li class="group_li"><a href="/?group_id=3" class="group_number">3 : Group 1C</a></li>
+            <li class="group_li"><a href="/?group_id=4" class="group_number">4 : Group 1D</a></li>
+            <li class="group_li"><a href="/?group_id=5" class="group_number">5 : Group 1E</a></li>
+            <li class="group_li"><a href="/?group_id=6" class="group_number">6 : Group 1F</a></li>
+            <li class="group_li"><a href="/?group_id=7" class="group_number">7 : Group 1G</a></li>
+            <li class="group_li"><a href="/?group_id=8" class="group_number">8 : Group 1H</a></li>
+            <li class="group_li"><a href="/?group_id=9" class="group_number">9 : Group 2A</a></li>
+            <li class="group_li"><a href="/?group_id=10" class="group_number">10 : Group 2B</a></li>
+            <li class="group_li"><a href="/?group_id=11" class="group_number">11 : Group 2C</a></li>
+            <li class="group_li"><a href="/?group_id=12" class="group_number">12 : Group 2D</a></li>
+            <li class="group_li"><a href="/?group_id=13" class="group_number">13 : Group 2E</a></li>
+            <li class="group_li"><a href="/?group_id=14" class="group_number">14 : Group 2F</a></li>
+            <li class="group_li"><a href="/?group_id=15" class="group_number">15 : Group 2G</a></li>
 
         </ul>
     </nav>
@@ -200,14 +200,14 @@
                             rating: +(d[name]),
                         };
                     }),
-                    visible: (name === "memoryMB" ? true : false) // "visible": all false except for economy which is true.
+                    visible: (name === "alive (0 or 1)" ? true : false) // "visible": all false except for economy which is true.
                 };
             });
 
             xScale.domain(d3.extent(data, function(d) { return d.date; })); // extent = highest and lowest points, domain is data, range is bouding box
 
-            yScale.domain([0,
-                d3.max(categories, function(c) { return d3.max(c.values, function(v) { return v.rating; }); })
+            yScale.domain([0, 2
+                //d3.max(categories, function(c) { return d3.max(c.values, function(v) { return v.rating; }); })
             ]);
 
             xScale2.domain(xScale.domain()); // Setting a duplicate xdomain for brushing reference later
