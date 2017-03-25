@@ -38,7 +38,6 @@ class checkHosts extends Command
      */
     public function handle()
     {
-
         $hosts = \DB::table('groups')
             ->select(['id', 'groups.name', 'groups.ip'])
             ->get();
@@ -85,17 +84,26 @@ class checkHosts extends Command
     {
         $hosts->map(function($item, $key) {
 
-            exec('timeout 30s ssh -i /var/www/id_rsa root@'.$item->ip.' "date"', $output, $return);
+            exec('timeout 30s ssh -i /var/www/id_rsa root@'.$item->ip.' "date 2>&1"', $output, $return);
 
             $alive = true;
 
             if($return != 0)
             {
                 $item->alive_error = implode(PHP_EOL, $output);
-                //mail(getenv('MAIL_TO'), 'HACS102',
-                //    'No response from '.$item->name.'
-                //    Output: '.implode('', $output).'
-                //    Return code: '.$return);
+                $previousAliveReport = \DB::table('syshealth')
+                    ->select('alive')
+                    ->where('group_id', '=', $item->id)
+                    ->latest('inserted_on')
+                    ->first();
+
+                if($previousAliveReport->alive == 1)
+                {
+                    mail(getenv('MAIL_TO'), 'HACS102',
+                        'No response from '.$item->name.'
+                        Output: '.implode("\n", $output).'
+                       Return code: '.$return);
+                }
                 $alive = false;
             }
             else
@@ -154,10 +162,22 @@ class checkHosts extends Command
 
             if(! ($inputDrop && $forwardDrop && $synFloodTable) )
             {
-                //mail(getenv('MAIL_TO'), 'HACS102',
-                //    'FIREWALL CONFIG from '.$item->name.'
-                //    Output: '.implode("\n", $output).'
-                 //   Return code: '.$return);
+                $previousFirewallReport = \DB::table('syshealth')
+                    ->select('firewall')
+                    ->where('alive', '=', 1)
+                    ->where('group_id', '=', $item->id)
+                    ->latest('inserted_on')
+                    ->first();
+
+                if($previousFirewallReport->firewall == 1)
+                {
+                    mail(getenv('MAIL_TO'), 'HACS102',
+                        'FIREWALL CONFIG FALSE from '.$item->name.'
+                        Output: '.implode("\n", $output).'
+                       Return code: '.$return);
+                }
+
+
                 $firewall = false;
             }
 
@@ -228,12 +248,22 @@ class checkHosts extends Command
                 }
             }
 
-            if(($storage < 1024)) // less than 1G
+            if(($storage < 512)) // less than 512MB
             {
-                //mail(getenv('MAIL_TO'), 'HACS102',
-                //    'Low Disk Usage from '.$item->name.'
-                //    Output: '.implode("\n", $output).'
-                //    Return code: '.$return);
+                $previousStorageReport = \DB::table('syshealth')
+                    ->select('storageMB')
+                    ->where('alive', '=', 1)
+                    ->where('group_id', '=', $item->id)
+                    ->latest('inserted_on')
+                    ->first();
+
+                if($previousStorageReport->storageMB > 512)
+                {
+                    mail(getenv('MAIL_TO'), 'HACS102',
+                    'Low Disk Space from '.$item->name.'
+                    Output: '.implode("\n", $output).'
+                    Return code: '.$return);
+                }
             }
 
             $item->storage = $storage;
@@ -269,6 +299,24 @@ class checkHosts extends Command
                     $line = preg_replace('!\s+!', ' ', $output[$i]);
                     $linePieces = explode(' ', $line);
                     $memory = $linePieces[6];
+                }
+            }
+
+            if($memory < 512) // less than 512MB
+            {
+                $previousMemoryReport = \DB::table('syshealth')
+                    ->select('memoryMB')
+                    ->where('alive', '=', 1)
+                    ->where('group_id', '=', $item->id)
+                    ->latest('inserted_on')
+                    ->first();
+
+                if($previousMemoryReport->memoryMB > 512)
+                {
+                    mail(getenv('MAIL_TO'), 'HACS102',
+                        'Low RAM Available from '.$item->name.'
+                    Output: '.implode("\n", $output).'
+                    Return code: '.$return);
                 }
             }
 
