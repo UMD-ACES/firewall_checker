@@ -83,15 +83,21 @@ class checkHosts extends Command
     private function checkAlive(Collection $hosts)
     {
         $hosts->map(function($item, $key) {
-
-            exec('timeout 30s ssh -i /var/www/id_rsa root@'.$item->ip.' "date 2>&1"', $output, $return);
-
             $alive = true;
+            $i = 0;
+            $return = 1;
+
+            while($i < 3 && $return != 0)
+            {
+                exec('timeout 10s ssh -i /var/www/id_rsa root@' . $item->ip . ' "date 2>&1"', $output, $return);
+                $i++;
+            }
+
 
             if($return != 0)
             {
                 $item->alive_error = implode(PHP_EOL, $output);
-                $previousAliveReport = \DB::table('syshealth')
+                /*$previousAliveReport = \DB::table('syshealth')
                     ->select('alive')
                     ->where('group_id', '=', $item->id)
                     ->latest('inserted_on')
@@ -103,7 +109,7 @@ class checkHosts extends Command
                         'No response from '.$item->name.'
                         Output: '.implode("\n", $output).'
                        Return code: '.$return);
-                }
+                }*/
                 $alive = false;
             }
             else
@@ -298,7 +304,7 @@ class checkHosts extends Command
                 {
                     $line = preg_replace('!\s+!', ' ', $output[$i]);
                     $linePieces = explode(' ', $line);
-                    $memory = $linePieces[6];
+                    $memory = $linePieces[3];
                 }
             }
 
