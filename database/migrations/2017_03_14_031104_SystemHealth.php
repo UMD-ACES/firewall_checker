@@ -53,5 +53,6 @@ class SystemHealth extends Migration
     {
         Schema::drop('syshealth');
         Schema::drop('groups');
+        Schema::drop('honeypots');
     }
 }
