@@ -125,7 +125,6 @@
         var yScale = d3.scale.linear()
             .range([height, 0]);
 
-        // 40 Custom DDV colors
         var color = d3.scale.ordinal().range(["#48A36D",   "#80CCB3",
              "#809ECE",  "#C280B7",  "#E37756",  "#F2DE8A"]);
 

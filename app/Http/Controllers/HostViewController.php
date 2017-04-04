@@ -15,11 +15,11 @@ class HostViewController extends Controller
     public function view($groupId)
     {
         $groupHost = \DB::table('syshealth')
-            ->select(['inserted_on', 'alive', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad'])
+            ->select(['inserted_on', 'alive', 'firewall', 'transferInMB', 'transferOutMB', 'storageMB', 'memoryMB', 'cpuLoad', 'honeypot_1', 'honeypot_2', 'honeypot_3', 'honeypot_4'])
             ->where('group_id', '=', $groupId)
             ->get();
 
-        $data = array(array('date', 'alive (0 or 1)', 'firewall (0 or 1)', 'Honeypot transfer In (MB)', 'Honeypot transfer Out (MB)', 'Available storage in MB', 'Unused memory in MB', 'CPU load - AVG 5 min'));
+        $data = array(array('date', 'alive (0 or 1)', 'firewall (0 or 1)', 'Honeypot transfer In (MB)', 'Honeypot transfer Out (MB)', 'Available storage in MB', 'Unused memory in MB', 'CPU load - AVG 5 min', 'Honeypot 1 Alive', 'Honeypot 2 Alive', 'Honeypot 3 Alive', 'Honeypot 4 Alive'));
         $i = 1;
 
         foreach ($groupHost as $host)
@@ -32,6 +32,11 @@ class HostViewController extends Controller
             $data[$i][] = $host->storageMB;
             $data[$i][] = $host->memoryMB;
             $data[$i][] = $host->cpuLoad;
+	    $data[$i][] = $host->honeypot_1;
+            $data[$i][] = $host->honeypot_2;
+            $data[$i][] = $host->honeypot_3;
+            $data[$i][] = $host->honeypot_4;
+            
             $i++;
         }
 

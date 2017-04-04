@@ -54,6 +54,8 @@ class checkHosts extends Command
 
         $hosts = $this->upTime($hosts);
 
+        $hosts = $this->honeypotAlive($hosts);
+
         $hosts->map(function($host, $key)
         {
             \DB::table('syshealth')
@@ -68,6 +70,10 @@ class checkHosts extends Command
                     'memoryMB'      => $host->memory,
                     'cpuLoad'       => $host->cpu,
                     'upTime'        => $host->upTime,
+                    'honeypot_1'    => $host->honeypot_1,
+                    'honeypot_2'    => $host->honeypot_2,
+                    'honeypot_3'    => $host->honeypot_3,
+                    'honeypot_4'    => $host->honeypot_4,
                     'inserted_on'   => date("Y-m-d H:i:s")]);
         });
 
@@ -304,7 +310,7 @@ class checkHosts extends Command
                 {
                     $line = preg_replace('!\s+!', ' ', $output[$i]);
                     $linePieces = explode(' ', $line);
-                    $memory = $linePieces[3];
+                    $memory = $linePieces[3] + $linePieces[5] + $linePieces[6];
                 }
             }
 
@@ -358,6 +364,43 @@ class checkHosts extends Command
 
             $item->cpu = $cpu;
             $item->upTime = $upTime[0];
+
+            return $item;
+        });
+
+        return $hosts;
+    }
+
+    /**
+     * @param Collection $hosts
+     * @return Collection $hosts
+     */
+    private function honeypotAlive(Collection $hosts)
+    {
+        $hosts->map(function($item, $key) {
+
+            $honeypots = \DB::table('honeypots')
+                ->select(['ip'])
+                ->where('group_id', '=', $item->id)
+                ->get();
+
+
+            for($honeypotNo = 0; $honeypotNo < $honeypots->count(); $honeypotNo++)
+            {
+		$name = 'honeypot_'.($honeypotNo + 1);
+		$item->$name = 0;	
+
+                exec('timeout 3s ping -c 2 '.$honeypots->get($honeypotNo)->ip, $output, $return);
+
+
+                for($i = 0; $i < count($output); $i++)
+                {
+                    if(strpos($output[$i], '2 received') !== FALSE)
+                    {
+                        $item->$name = 1;
+                    }
+                }
+            }
 
             return $item;
         });

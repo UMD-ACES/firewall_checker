@@ -20,6 +20,13 @@ class SystemHealth extends Migration
             $table->ipAddress('ip');
         });
 
+        Schema::create('honeypots', function (Blueprint $table)
+        {
+           $table->increments('id');
+           $table->integer('group_id');
+           $table->ipAddress('ip');
+        });
+
         Schema::create('syshealth', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('group_id');
