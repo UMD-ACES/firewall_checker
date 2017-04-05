@@ -380,7 +380,7 @@ class checkHosts extends Command
                     }
                 }
 
-                if($item->$name == 0 || $item->id == 14)
+                if($item->$name == 0)
                 {
                     $this->checkInfraction($item->id, $name, 1, $output, $return);
                 }
