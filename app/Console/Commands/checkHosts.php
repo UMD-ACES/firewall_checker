@@ -92,30 +92,19 @@ class checkHosts extends Command
             $alive = true;
             $i = 0;
             $return = 1;
+            $output = array();
 
-            while($i < 3 && $return != 0)
+            while($i < 4 && $return != 0)
             {
-                exec('timeout 10s ssh -i /var/www/id_rsa root@' . $item->ip . ' "date 2>&1"', $output, $return);
+                exec('timeout 10s ssh -i /var/www/id_rsa root@' . $item->ip . ' "date" 2>&1', $output, $return);
                 $i++;
             }
 
-
+            //Was unable to connect to system
             if($return != 0)
             {
                 $item->alive_error = implode(PHP_EOL, $output);
-                /*$previousAliveReport = \DB::table('syshealth')
-                    ->select('alive')
-                    ->where('group_id', '=', $item->id)
-                    ->latest('inserted_on')
-                    ->first();
-
-                if($previousAliveReport->alive == 1)
-                {
-                    mail(getenv('MAIL_TO'), 'HACS102',
-                        'No response from '.$item->name.'
-                        Output: '.implode("\n", $output).'
-                       Return code: '.$return);
-                }*/
+                $this->checkInfraction($item->id, 'alive', 1, $output, $return);
                 $alive = false;
             }
             else
@@ -174,22 +163,7 @@ class checkHosts extends Command
 
             if(! ($inputDrop && $forwardDrop && $synFloodTable) )
             {
-                $previousFirewallReport = \DB::table('syshealth')
-                    ->select('firewall')
-                    ->where('alive', '=', 1)
-                    ->where('group_id', '=', $item->id)
-                    ->latest('inserted_on')
-                    ->first();
-
-                if($previousFirewallReport->firewall == 1)
-                {
-                    mail(getenv('MAIL_TO'), 'HACS102',
-                        'FIREWALL CONFIG FALSE from '.$item->name.'
-                        Output: '.implode("\n", $output).'
-                       Return code: '.$return);
-                }
-
-
+                $this->checkInfraction($item->id, 'firewall', 1, $output, $return);
                 $firewall = false;
             }
 
@@ -260,7 +234,7 @@ class checkHosts extends Command
                 }
             }
 
-            if(($storage < 512)) // less than 512MB
+            if(($storage < 128)) // less than 128MB
             {
                 $previousStorageReport = \DB::table('syshealth')
                     ->select('storageMB')
@@ -269,13 +243,15 @@ class checkHosts extends Command
                     ->latest('inserted_on')
                     ->first();
 
-                if($previousStorageReport->storageMB > 512)
+                if($previousStorageReport->storageMB > 128)
                 {
                     mail(getenv('MAIL_TO'), 'HACS102',
                     'Low Disk Space from '.$item->name.'
                     Output: '.implode("\n", $output).'
                     Return code: '.$return);
                 }
+
+                $this->checkInfraction($item->id, 'storageMB', 128, $output, $return);
             }
 
             $item->storage = $storage;
@@ -330,6 +306,8 @@ class checkHosts extends Command
                     Output: '.implode("\n", $output).'
                     Return code: '.$return);
                 }
+
+                $this->checkInfraction($item->id, 'memoryMB', 51200, $output, $return);
             }
 
             $item->memory = $memory;
@@ -384,11 +362,12 @@ class checkHosts extends Command
                 ->where('group_id', '=', $item->id)
                 ->get();
 
+            echo $item->id.PHP_EOL;
 
             for($honeypotNo = 0; $honeypotNo < $honeypots->count(); $honeypotNo++)
             {
-		$name = 'honeypot_'.($honeypotNo + 1);
-		$item->$name = 0;	
+                $name = 'honeypot_'.($honeypotNo + 1);
+		        $item->$name = 0;
 
                 exec('timeout 3s ping -c 2 '.$honeypots->get($honeypotNo)->ip, $output, $return);
 
@@ -400,11 +379,67 @@ class checkHosts extends Command
                         $item->$name = 1;
                     }
                 }
+
+                if($item->$name == 0 || $item->id == 14)
+                {
+                    $this->checkInfraction($item->id, $name, 1, $output, $return);
+                }
             }
 
             return $item;
         });
 
         return $hosts;
+    }
+
+
+    private function checkInfraction($group_id, $type, $threshold, $output, $return)
+    {
+        $previousReport = \DB::table('syshealth')
+            ->select('inserted_on', $type)
+            ->where('group_id', '=', $group_id)
+            ->where('alive', '=', '1')
+            ->latest('inserted_on')
+            ->first();
+
+        $infType = \DB::table('infractions_type')
+            ->select(['id', 'grace_seconds'])
+            ->where('name' , '=', $type)
+            ->first();
+
+        $lastInfraction = \DB::table('infractions')
+            ->select('created_at', 'period')
+            ->where('type', '=', $infType->id)
+            ->where('group_id', '=', $group_id)
+            ->latest('created_at')
+            ->first();
+
+        $dbDate = strtotime($previousReport->inserted_on);
+        $now = time();
+
+
+        //greater since threshold accounts for numbers 0...threshold (threshold...infinity are fine values)
+        if($previousReport->$type > $threshold)
+        {
+            return;
+        }
+
+        //Determine if it is an infraction
+        if(($now - $dbDate) >= $infType->grace_seconds && (!isset($lastInfraction) ||
+            ($now - ($now - $dbDate)) != (strtotime($lastInfraction->created_at) - $lastInfraction->period)))
+        {
+            echo 'Infraction';
+            \DB::table('infractions')
+                ->insert(['group_id' => $group_id,
+                    'inserted_by' => 'automatic',
+                    'type'        => $infType->id,
+                    'period'      => ($now - $dbDate),
+                    'created_at'  => date("Y-m-d H:i:s")]);
+
+            mail(getenv('MAIL_TO'), 'HACS102',
+                'Infraction '.$type.' from '.$group_id.'
+                Output: '.implode("\n", $output).'
+                Return code: '.$return);
+        }
     }
 }
