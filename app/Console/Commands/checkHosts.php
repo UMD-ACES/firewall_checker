@@ -144,6 +144,7 @@ class checkHosts extends Command
             $inputDrop          = false;
             $forwardDrop        = false;
             $synFloodTable      = false;
+            $estFloodTable      = false;
 
             for($i = 0; $i < count($output); $i++)
             {
@@ -159,9 +160,13 @@ class checkHosts extends Command
                 {
                     $synFloodTable = true;
                 }
+                if(strpos($output[$i], 'est_flood') !== FALSE)
+                {
+                    $estFloodTable = true;
+                }
             }
 
-            if(! ($inputDrop && $forwardDrop && $synFloodTable) )
+            if(! ($inputDrop && $forwardDrop && $synFloodTable && $estFloodTable) )
             {
                 $this->checkInfraction($item->id, 'firewall', 1, $output, $return);
                 $firewall = false;
@@ -395,10 +400,19 @@ class checkHosts extends Command
 
     private function checkInfraction($group_id, $type, $threshold, $output, $return)
     {
+        if(strpos($type, 'honeypot_') === false)
+        {
+            $aliveSystem = 'alive';
+        }
+        else
+        {
+            $aliveSystem = $type;
+        }
+
         $previousReport = \DB::table('syshealth')
             ->select('inserted_on', $type)
             ->where('group_id', '=', $group_id)
-            ->where('alive', '=', '1')
+            ->where($aliveSystem, '=', '1')
             ->latest('inserted_on')
             ->first();
 
