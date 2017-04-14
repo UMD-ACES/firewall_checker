@@ -367,8 +367,6 @@ class checkHosts extends Command
                 ->where('group_id', '=', $item->id)
                 ->get();
 
-            echo $item->id.PHP_EOL;
-
             for($honeypotNo = 0; $honeypotNo < $honeypots->count(); $honeypotNo++)
             {
                 $name = 'honeypot_'.($honeypotNo + 1);
@@ -442,7 +440,6 @@ class checkHosts extends Command
         if(($now - $dbDate) >= $infType->grace_seconds && (!isset($lastInfraction) ||
             ($now - ($now - $dbDate)) != (strtotime($lastInfraction->created_at) - $lastInfraction->period)))
         {
-            echo 'Infraction';
             \DB::table('infractions')
                 ->insert(['group_id' => $group_id,
                     'inserted_by' => 'automatic',
